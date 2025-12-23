@@ -10,7 +10,7 @@ import (
 )
 
 func NewClient(ctx context.Context) *whatsmeow.Client {
-	dbLog := waLog.Stdout("Database", "DEBUG", true)
+	dbLog := waLog.Stdout("Database", "ERROR", true)
 	container, err := sqlstore.New(ctx, "sqlite3", "file:wa.db?_foreign_keys=on", dbLog)
 	if err != nil {
 		panic(err)
@@ -19,6 +19,6 @@ func NewClient(ctx context.Context) *whatsmeow.Client {
 	if err != nil {
 		panic(err)
 	}
-	clientLog := waLog.Stdout("Client", "DEBUG", true)
+	clientLog := waLog.Stdout("Client", "ERROR", true)
 	return whatsmeow.NewClient(deviceStore, clientLog)
 }

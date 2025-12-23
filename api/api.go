@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"errors"
-
+	"github.com/lugvitc/whats4linux/internal/mstore"
 	"github.com/lugvitc/whats4linux/internal/wa"
 	"github.com/nyaruka/phonenumbers"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/types/events"
 )
 
 type Group struct {
@@ -30,8 +30,9 @@ type Contact struct {
 
 // Api struct
 type Api struct {
-	ctx      context.Context
-	waClient *whatsmeow.Client
+	ctx          context.Context
+	waClient     *whatsmeow.Client
+	messageStore *mstore.MessageStore
 }
 
 // NewApi creates a new Api application struct
@@ -44,10 +45,12 @@ func New() *Api {
 func (a *Api) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.waClient = wa.NewClient(ctx)
+	a.messageStore = mstore.NewMessageStore()
 }
 
 func (a *Api) Login() error {
 	var err error
+	a.waClient.AddEventHandler(a.mainEventHandler)
 	if a.waClient.Store.ID == nil {
 		qrChan, _ := a.waClient.GetQRChannel(a.ctx)
 		err = a.waClient.Connect()
@@ -93,10 +96,6 @@ func (a *Api) FetchGroups() ([]Group, error) {
 }
 
 func (a *Api) FetchContacts() ([]Contact, error) {
-	if !a.waClient.IsLoggedIn() {
-		return nil, errors.New("not logged in")
-
-	}
 	rawContacts, err := a.waClient.Store.Contacts.GetAllContacts(a.ctx)
 	if err != nil {
 		return nil, err
@@ -121,4 +120,13 @@ func (a *Api) FetchContacts() ([]Contact, error) {
 		})
 	}
 	return result, nil
+}
+
+func (a *Api) mainEventHandler(evt interface{}) {
+	switch v := evt.(type) {
+	case *events.Message:
+		a.messageStore.ProcessMessageEvent(v)
+	default:
+		// Ignore other events for now
+	}
 }
