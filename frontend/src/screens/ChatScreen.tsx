@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { GetChatList } from "../../wailsjs/go/api/Api";
 import { api } from "../../wailsjs/go/models";
+import { EventsOn } from "../../wailsjs/runtime/runtime";
 
 type ChatItem = {
     id: string;
@@ -15,19 +16,35 @@ export function ChatListScreen({ onOpenSettings }: { onOpenSettings: () => void 
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
+    const fetchChats = () => {
+        GetChatList()
+            .then((chatElements) => {
+                const items: ChatItem[] = (chatElements || []).map((c: api.ChatElement) => {
+                    const isGroup = c.jid.endsWith('@g.us');
+                    return {
+                        id: c.jid,
+                        name: c.full_name || c.push_name || c.short || c.jid,
+                        subtitle: c.latest_message || "",
+                        type: isGroup ? 'group' : 'contact'
+                    };
+                });
+                setChats(items);
+            })
+            .catch(console.error);
+    };
+
     useEffect(() => {
-        GetChatList().then((chatElements) => {
-            const items: ChatItem[] = (chatElements || []).map((c: api.ChatElement) => {
-                const isGroup = c.jid.endsWith('@g.us');
-                return {
-                    id: c.jid,
-                    name: c.full_name || c.push_name || c.short || c.jid,
-                    subtitle: c.latest_message || "",
-                    type: isGroup ? 'group' : 'contact'
-                };
-            });
-            setChats(items);
-        }).catch(console.error);
+        const unsub = EventsOn("wa:new_message", () => {
+            fetchChats();
+        });
+    
+        return () => {
+            unsub();
+        };
+      }, []);
+
+    useEffect(() => {
+        fetchChats();
     }, []);
 
     const filteredChats = chats.filter(c => 
