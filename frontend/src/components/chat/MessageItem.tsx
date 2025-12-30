@@ -4,6 +4,7 @@ import { DownloadMedia, GetContact } from "../../../wailsjs/go/api/Api"
 import { parseWhatsAppMarkdown } from "../../utils/markdown"
 import { MediaContent } from "./MediaContent"
 import { QuotedMessage } from "./QuotedMessage"
+import { MessageMenu } from "./MessageMenu"
 
 interface MessageItemProps {
   message: store.Message
@@ -24,6 +25,46 @@ export function MessageItem({ message, chatId, sentMediaCache }: MessageItemProp
   const content = message.Content
   const isSticker = !!content?.stickerMessage
   const [senderName, setSenderName] = useState(message.Info.PushName || "Unknown")
+
+  const handleReply = () => {
+    // TODO: Implement reply functionality
+  }
+
+  const handleReplyPrivately = () => {
+    // TODO: Implement reply privately functionality
+  }
+
+  const handleMessage = () => {
+    // TODO: Implement message functionality
+  }
+
+  const handleCopy = () => {
+    const textToCopy = content?.conversation || content?.extendedTextMessage?.text || ""
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy)
+      console.log("Copied to clipboard")
+    }
+  }
+
+  const handleReact = () => {
+    // TODO: Implement react functionality
+  }
+
+  const handleForward = () => {
+    // TODO: Implement forward functionality
+  }
+
+  const handleStar = () => {
+    // TODO: Implement star functionality
+  }
+
+  const handleReport = () => {
+    // TODO: Implement report functionality
+  }
+
+  const handleDelete = () => {
+    // TODO: Implement delete functionality
+  }
 
   // Fetch Group Member Names (Feature #2)
   useEffect(() => {
@@ -48,12 +89,10 @@ export function MessageItem({ message, chatId, sentMediaCache }: MessageItemProp
 
   const renderContent = () => {
     if (!content) return <span className="italic opacity-50">Empty Message</span>
-
-    if (content.conversation) return parseWhatsAppMarkdown(content.conversation)
-    if (content.extendedTextMessage?.text)
+    else if (content.conversation) return parseWhatsAppMarkdown(content.conversation)
+    else if (content.extendedTextMessage?.text)
       return parseWhatsAppMarkdown(content.extendedTextMessage.text)
-
-    if (content.imageMessage)
+    else if (content.imageMessage)
       return (
         <div className="flex flex-col">
           <MediaContent
@@ -67,8 +106,7 @@ export function MessageItem({ message, chatId, sentMediaCache }: MessageItemProp
           )}
         </div>
       )
-
-    if (content.videoMessage)
+    else if (content.videoMessage)
       return (
         <div className="flex flex-col">
           <MediaContent
@@ -82,8 +120,7 @@ export function MessageItem({ message, chatId, sentMediaCache }: MessageItemProp
           )}
         </div>
       )
-
-    if (content.audioMessage)
+    else if (content.audioMessage)
       return (
         <MediaContent
           message={message}
@@ -92,11 +129,9 @@ export function MessageItem({ message, chatId, sentMediaCache }: MessageItemProp
           sentMediaCache={sentMediaCache}
         />
       )
-
-    if (content.stickerMessage)
+    else if (content.stickerMessage)
       return <MediaContent message={message} type="sticker" chatId={chatId} />
-
-    if (content.documentMessage) {
+    else if (content.documentMessage) {
       const doc = content.documentMessage
       const fileName = doc.fileName || "Document"
       const extension = fileName.split(".").pop()?.toUpperCase() || "FILE"
@@ -135,12 +170,11 @@ export function MessageItem({ message, chatId, sentMediaCache }: MessageItemProp
           {doc.caption && <div className="mt-1">{parseWhatsAppMarkdown(doc.caption)}</div>}
         </div>
       )
-    }
-    return <span className="italic opacity-50 text-xs">Unsupported Message Type</span>
+    } else return <span className="italic opacity-50 text-xs">Unsupported Message Type</span>
   }
 
   return (
-    <div className={`flex ${isFromMe ? "justify-end" : "justify-start"} mb-2`}>
+    <div className={`flex ${isFromMe ? "justify-end" : "justify-start"} mb-2 group`}>
       <div
         className={`max-w-[75%] rounded-lg p-2 shadow-sm relative ${
           isSticker
@@ -150,6 +184,21 @@ export function MessageItem({ message, chatId, sentMediaCache }: MessageItemProp
               : "bg-white dark:bg-[#202c33] text-gray-900 dark:text-white"
         }`}
       >
+        {/* Message Menu - positioned at top right corner */}
+        <MessageMenu
+          messageId={message.Info.ID}
+          isFromMe={isFromMe}
+          onReply={handleReply}
+          onReplyPrivately={!isFromMe ? handleReplyPrivately : undefined}
+          onMessage={!isFromMe ? handleMessage : undefined}
+          onCopy={handleCopy}
+          onReact={handleReact}
+          onForward={handleForward}
+          onStar={handleStar}
+          onReport={!isFromMe ? handleReport : undefined}
+          onDelete={handleDelete}
+        />
+
         {!isFromMe && chatId.endsWith("@g.us") && !isSticker && (
           <div className="text-[11px] font-semibold text-blue-500 mb-0.5">{senderName}</div>
         )}
