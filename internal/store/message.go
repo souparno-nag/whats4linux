@@ -40,7 +40,7 @@ func NewMessageStore() (*MessageStore, error) {
 	msgCacheOpts := &cacher.NewCacherOpts{
 		TimeToLive:    30 * time.Minute,
 		Revaluate:     true,
-		CleanInterval: 5 * time.Minute,
+		CleanInterval: 40 * time.Minute,
 	}
 	msgCache := cacher.NewCacher[types.JID, []Message](msgCacheOpts)
 
@@ -48,7 +48,7 @@ func NewMessageStore() (*MessageStore, error) {
 	chatListCacheOpts := &cacher.NewCacherOpts{
 		TimeToLive:    5 * time.Minute,
 		Revaluate:     true,
-		CleanInterval: 1 * time.Minute,
+		CleanInterval: 10 * time.Minute,
 	}
 	chatListCache := cacher.NewCacher[string, []ChatMessage](chatListCacheOpts)
 
