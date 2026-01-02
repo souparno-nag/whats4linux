@@ -36,6 +36,7 @@ export function ChatDetail({ chatId, chatName, chatAvatar, onBack }: ChatDetailP
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
   const [isReady, setIsReady] = useState(false)
+  const [isAtBottom, setIsAtBottom] = useState(true)
 
   const messageListRef = useRef<MessageListHandle>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -49,6 +50,10 @@ export function ChatDetail({ chatId, chatName, chatAvatar, onBack }: ChatDetailP
     requestAnimationFrame(() => {
       messageListRef.current?.scrollToBottom(instant ? "auto" : "smooth")
     })
+  }, [])
+
+  const handleAtBottomChange = useCallback((atBottom: boolean) => {
+    setIsAtBottom(atBottom)
   }, [])
 
   const loadInitialMessages = useCallback(async () => {
@@ -186,19 +191,21 @@ export function ChatDetail({ chatId, chatName, chatAvatar, onBack }: ChatDetailP
           </div>
         )}
 
-        <button
-          onClick={() => scrollToBottom(false)}
-          className="absolute bottom-4 right-8 bg-white dark:bg-received-bubble-dark-bg p-2 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 z-100 hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="24"
-            height="24"
-            className="fill-current text-gray-600 dark:text-gray-400"
+        {!isAtBottom && (
+          <button
+            onClick={() => scrollToBottom(false)}
+            className="absolute bottom-4 right-8 bg-white dark:bg-received-bubble-dark-bg p-2 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 z-100 hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
           >
-            <path d="M12 16.17L4.83 9L3.41 10.41L12 19L20.59 10.41L19.17 9L12 16.17Z" />
-          </svg>
-        </button>
+            <svg
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              className="fill-current text-gray-600 dark:text-gray-400"
+            >
+              <path d="M12 16.17L4.83 9L3.41 10.41L12 19L20.59 10.41L19.17 9L12 16.17Z" />
+            </svg>
+          </button>
+        )}
 
         <div className={clsx("h-full", (!isReady || initialLoad) && "invisible")}>
           <MessageList
@@ -208,6 +215,7 @@ export function ChatDetail({ chatId, chatName, chatAvatar, onBack }: ChatDetailP
             sentMediaCache={sentMediaCache}
             onReply={setReplyingTo}
             onLoadMore={loadMoreMessages}
+            onAtBottomChange={handleAtBottomChange}
             firstItemIndex={firstItemIndex}
             isLoading={isLoadingMore}
             hasMore={hasMore}
