@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 
 	"github.com/gen2brain/beeep"
 	"github.com/lugvitc/whats4linux/internal/misc"
@@ -110,19 +109,6 @@ func (a *Api) Login() error {
 			return err
 		}
 	}
-
-	// For new logins, there might be a problem where the whatsmeow client
-	// gets a 515 code which gets resolved internally by auto-reconnecting
-	// in a separate goroutine. In that case, the Initialise call below for
-	// the AppDatabase will be executed first without the client even logging
-	// in (which is the reason why the groups fetch fails and there are no
-	// groups in the app until a manual reinitialize is done). To avoid that,
-	// wait here until logged in.
-	for !a.waClient.IsLoggedIn() {
-		fmt.Println("Waiting for login...")
-		time.Sleep(1 * time.Second)
-	}
-	a.cw.Initialise(a.waClient)
 	return nil
 }
 
@@ -657,6 +643,15 @@ func (a *Api) mainEventHandler(evt any) {
 			"chatId":  v.Info.Chat.String(),
 			"message": msg,
 		})
+	case *events.Connected:
+		// For new logins, there might be a problem where the whatsmeow client
+		// gets a 515 code which gets resolved internally by auto-reconnecting
+		// in a separate goroutine. In that case, the Initialise call below for
+		// the AppDatabase will be executed first without the client even logging
+		// in (which is the reason why the groups fetch fails and there are no
+		// groups in the app until a manual reinitialize is done). To avoid that,
+		// wait here until logged in.
+		a.cw.Initialise(a.waClient)
 	default:
 		// Ignore other events for now
 	}
