@@ -42,9 +42,15 @@ const (
 	`
 
 	InsertMessage = `
-	INSERT OR IGNORE INTO messages
+	INSERT INTO messages
 	(chat, message_id, timestamp, msg_info, raw_message)
 	VALUES (?, ?, ?, ?, ?)
+	`
+
+	UpdateMessage = `
+	UPDATE messages
+	SET msg_info = ?, raw_message = ?
+	WHERE message_id = ?;
 	`
 
 	SelectChatList = `

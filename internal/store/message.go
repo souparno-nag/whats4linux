@@ -64,10 +64,6 @@ func (ms *MessageStore) initSchema() error {
 }
 
 func (ms *MessageStore) ProcessMessageEvent(msg *events.Message) {
-	if _, exists := ms.mCache.Get(msg.Info.ID); exists {
-		return
-	}
-	ms.mCache.Set(msg.Info.ID, 1)
 	chat := msg.Info.Chat.User
 
 	m := Message{
@@ -77,6 +73,15 @@ func (ms *MessageStore) ProcessMessageEvent(msg *events.Message) {
 
 	// Invalidate specific chat in chatListMap
 	ms.chatListMap.Delete(chat)
+
+	if _, exists := ms.mCache.Get(msg.Info.ID); exists {
+		err := ms.updateMessageInDB(&m)
+		if err != nil {
+			log.Println(err)
+		}
+		return
+	}
+	ms.mCache.Set(msg.Info.ID, 1)
 
 	err := ms.insertMessageToDB(&m)
 	if err != nil {
@@ -283,6 +288,25 @@ func (ms *MessageStore) insertMessageToDB(msg *Message) error {
 		msg.Info.Timestamp.Unix(),
 		msgInfo,
 		rawMessage,
+	)
+	return err
+}
+
+func (ms *MessageStore) updateMessageInDB(msg *Message) error {
+	msgInfo, err := gobEncode(msg.Info)
+	if err != nil {
+		return err
+	}
+
+	rawMessage, err := marshalMessageContent(msg.Content)
+	if err != nil {
+		return err
+	}
+
+	_, err = ms.db.Exec(query.UpdateMessage,
+		msgInfo,
+		rawMessage,
+		msg.Info.ID,
 	)
 	return err
 }
